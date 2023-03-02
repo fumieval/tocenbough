@@ -1,0 +1,12 @@
+name: Continuous deployment
+on:
+  pull_request:
+    types: [opened, reopened, labeled, unlabeled, synchronize]
+jobs:
+  cd:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: fumieval/tocenbough@master
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          threshold: 10
