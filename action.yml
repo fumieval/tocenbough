@@ -1,0 +1,40 @@
+name: tocenbough
+description: prevent accumulating unreleased changes
+inputs:
+  threshold:
+    description: Number of pull request allowed between releases
+    required: true
+  multiplier:
+    description: Multiplier for non-bot changes
+    default: 2
+  token:
+    description: GitHub token
+    required: true
+runs:
+  using: "composite"
+  steps:
+  - shell: bash
+    run: |
+      if [ ${{ contains(github.event.pull_request.labels.*.name, 'cram') }} == "true" ]; then
+        exit 0
+      fi
+      git fetch --quiet --unshallow origin
+      
+      latest=$(curl -H "Authorization: Bearer ${{ inputs.token }}" --silent \
+        "https://api.github.com/repos/herp-inc/hub/releases/latest" | jq -r .tag_name)
+
+      log="$(git log --format="%an %s" "$latest..origin/master" | grep "Merge pull request")"
+
+      pr_count=$(echo "$log" | grep -v 'bot]' | wc -l | xargs)
+      bot_count=$(echo "$log" | grep 'bot]' | wc -l | xargs)
+
+      score=$(( $pr_count * ${{ inputs.multiplier }} + $bot_count ))
+
+      expr="Total weight of unreleased PRs since $latest: ${{ inputs.multiplier }} * $pr_count[PRs] + $bot_count[bot] = $score"
+
+      if [ "$score" -gt "${{ inputs.threshold }}" ]; then
+        echo "::error file=$0,line=4 ::We have too many unreleased changes! $expr"
+        exit 1
+      else
+        echo "::notice file=$0,line=4 ::$expr"
+      fi
