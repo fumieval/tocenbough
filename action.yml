@@ -39,9 +39,10 @@ runs:
 
       expr="Total weight of unreleased PRs since $latest: ${{ inputs.multiplier }} * $pr_count[PRs] + $bot_count[bot] = $score"
 
+      echo -e "### tocenbough\n" >> $GITHUB_STEP_SUMMARY
       if [ "$score" -gt "${{ inputs.threshold }}" ]; then
-        echo "::error:: We have too many unreleased changes! $expr"
+        echo "We have too many unreleased changes! $expr" >> $GITHUB_STEP_SUMMARY
         exit 1
       else
-        echo "::notice:: $expr"
+        echo "$expr" >> $GITHUB_STEP_SUMMARY
       fi
