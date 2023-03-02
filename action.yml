@@ -24,6 +24,10 @@ runs:
       latest=$(curl -H "Authorization: Bearer ${{ inputs.token }}" --silent \
         "https://api.github.com/repos/herp-inc/hub/releases/latest" | jq -r .tag_name)
 
+      if [ "$latest" == "null" ]; then
+        latest=4b825dc642cb6eb9a060e54bf8d69288fbee4904
+      fi
+
       log="$(git log --format="%an %s" "$latest..origin/master" | grep "Merge pull request")"
 
       pr_count=$(echo "$log" | grep -v 'bot]' | wc -l | xargs)
