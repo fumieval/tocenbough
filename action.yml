@@ -1,0 +1,48 @@
+name: tocenbough
+description: prevent accumulating unreleased changes
+inputs:
+  threshold:
+    description: Number of pull request allowed between releases
+    required: true
+  multiplier:
+    description: Multiplier for non-bot changes
+    default: 2
+  token:
+    description: GitHub token
+    required: true
+runs:
+  using: "composite"
+  steps:
+  - uses: actions/checkout@v3
+  - shell: bash
+    run: |
+      set +e
+      set +o pipefail
+
+      if [ ${{ contains(github.event.pull_request.labels.*.name, 'cram') }} == "true" ]; then
+        exit 0
+      fi
+      git fetch --quiet --unshallow origin
+      
+      latest=$(curl -H "Authorization: Bearer ${{ inputs.token }}" --silent \
+        "https://api.github.com/repos/${{ github.repository }}/releases/latest" | jq -r .tag_name)
+
+      if [ "$latest" == "null" ]; then
+        latest=4b825dc642cb6eb9a060e54bf8d69288fbee4904
+      fi
+      log="$(git log --merges --format="%an %s" "$latest..origin/${{ github.event.pull_request.base.ref }}")"
+
+      pr_count=$(echo "$log" | grep -v 'bot]' | wc -l | xargs)
+      bot_count=$(echo "$log" | grep 'bot]' | wc -l | xargs)
+
+      score=$(( $pr_count * ${{ inputs.multiplier }} + $bot_count ))
+
+      expr="Total weight of unreleased PRs since $latest: ${{ inputs.multiplier }} * $pr_count[PRs] + $bot_count[bot] = $score"
+
+      echo -e "### tocenbough\n" >> $GITHUB_STEP_SUMMARY
+      if [ "$score" -gt "${{ inputs.threshold }}" ]; then
+        echo "We have too many unreleased changes! $expr" >> $GITHUB_STEP_SUMMARY
+        exit 1
+      else
+        echo "$expr" >> $GITHUB_STEP_SUMMARY
+      fi
