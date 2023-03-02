@@ -40,8 +40,8 @@ runs:
       expr="Total weight of unreleased PRs since $latest: ${{ inputs.multiplier }} * $pr_count[PRs] + $bot_count[bot] = $score"
 
       if [ "$score" -gt "${{ inputs.threshold }}" ]; then
-        echo "::error file=$0,line=4 ::We have too many unreleased changes! $expr"
+        echo "::error:: We have too many unreleased changes! $expr"
         exit 1
       else
-        echo "::notice file=$0,line=4 ::$expr"
+        echo "::notice:: $expr"
       fi
