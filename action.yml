@@ -19,9 +19,6 @@ runs:
       set +e
       set +o pipefail
 
-      if [ ${{ contains(github.event.pull_request.labels.*.name, 'cram') }} == "true" ]; then
-        exit 0
-      fi
       git fetch --quiet --unshallow origin
       
       latest=$(curl -H "Authorization: Bearer ${{ inputs.token }}" --silent \
@@ -42,7 +39,9 @@ runs:
       echo -e "### tocenbough\n" >> $GITHUB_STEP_SUMMARY
       if [ "$score" -gt "${{ inputs.threshold }}" ]; then
         echo "We have too many unreleased changes! $expr" >> $GITHUB_STEP_SUMMARY
-        exit 1
+        if [ ${{ contains(github.event.pull_request.labels.*.name, 'cram') }} == "false" ]; then
+          exit 1
+        fi
       else
         echo "$expr" >> $GITHUB_STEP_SUMMARY
       fi
