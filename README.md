@@ -13,7 +13,7 @@ jobs:
   cd:
     runs-on: ubuntu-latest
     steps:
-      - uses: fumieval/tocenbough@main
+      - uses: fumieval/tocenbough@v0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           threshold: 10
