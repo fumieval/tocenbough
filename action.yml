@@ -10,6 +10,9 @@ inputs:
   token:
     description: GitHub token
     required: true
+  strict:
+    description: Count the number from PRs from the latest release
+    default: false
 runs:
   using: "composite"
   steps:
@@ -21,8 +24,13 @@ runs:
 
       git fetch --quiet --unshallow origin
       
-      latest=$(curl -H "Authorization: Bearer ${{ inputs.token }}" --silent \
-        "https://api.github.com/repos/${{ github.repository }}/releases/latest" | jq -r .tag_name)
+      if [ ${{ inputs.strict }} == "true" ]; then
+        latest=$(curl -H "Authorization: Bearer ${{ inputs.token }}" --silent \
+          "https://api.github.com/repos/${{ github.repository }}/releases/latest" | jq -r .tag_name)
+      else
+        latest=$(curl -H "Authorization: Bearer ${{ inputs.token }}" --silent \
+          "https://api.github.com/repos/${{ github.repository }}/releases" | jq -r '.[0] | .tag_name')
+      fi
 
       if [ "$latest" == "null" ]; then
         latest=4b825dc642cb6eb9a060e54bf8d69288fbee4904
